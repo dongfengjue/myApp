@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html>
+
+	<head>
+		<meta charset="utf-8">
+		<title>Hello MUI</title>
+		<meta name="viewport" content="width=device-width, initial-scale=1,maximum-scale=1,user-scalable=no">
+		<meta name="apple-mobile-web-app-capable" content="yes">
+		<meta name="apple-mobile-web-app-status-bar-style" content="black">
+
+		<!--标准mui.css-->
+		<link rel="stylesheet" href="../css/mui.min.css">
+		<!--App自定义的css-->
+		<!--<link rel="stylesheet" type="text/css" href="../css/app.css"/>-->
+		<style>
+		 	.mui-content-padded {
+				padding: 10px;
+			}
+			body,body .mui-content {
+				background-color: #fff !important;
+			}
+			code {
+				word-wrap: break-word;
+				word-break: normal;
+				font-size: 90%;
+				color: #c7254e;
+				background-color: #f9f2f4;
+				border-radius: 4px;
+			}
+		</style>
+	</head>
+
+	<body>
+		<header class="mui-bar mui-bar-nav">
+			<a class="mui-action-back mui-icon mui-icon-left-nav mui-pull-left"></a>
+			<h1 class="mui-title">小胖子天气查询</h1>
+		</header>
+		<div class="mui-content" id = "app">
+			<div class="mui-content-padded" style="padding-bottom: 50px;">
+				<h4 class="mui-content-padded">天气查询：</h4>
+				<div class="mui-input-group">
+					<div class="mui-input-row">
+						<label>city:</label>
+						<select id="city">
+							<option value="深圳">深圳</option>
+							<option value="萍乡">萍乡</option>
+						</select>
+					</div>
+					<div class="mui-button-row">
+						<button type="button" id="confirm" class="mui-btn mui-btn-primary">查询</button>
+					</div>
+				</div>
+				<h4 class="mui-content-padded">获得天气结果：</h4>
+				<div id="result" style="padding-left: 60px;">
+						<code id="response">
+							<div>
+								<span>今日温度：</span>
+								<span>{{todayTemperature}}</span>
+							</div>
+							<div>
+								<span>明日最低温度：</span>
+								<span>{{tomorrowLow}}</span>
+							</div>
+							<div>
+								<span>今日最高温度：</span>
+								<span>{{tomorrowHigh}}</span>
+							</div>
+							<div>
+								<span>明日天气：</span>
+								<span>{{tomorrowType}}</span>
+							</div>
+							<div>
+								<span>建议：</span>
+								<span>{{notice}}</span>
+							</div>
+						</code>
+				</div>
+			</div>
+		</div>
+		<script src="../js/mui.min.js"></script>
+		<script src="../libs/vue.js"></script>
+		<script>
+			
+			var vm = new Vue({
+		        el: '#app',
+		        data: {
+		        	todayTemperature:"",
+		        	tomorrowHigh:"",
+		        	tomorrowLow:"",
+		        	tomorrowType:"",
+		        	notice:"",
+		        },
+		        computed: {},
+		        methods: {},
+		        mounted: function () {
+		        }
+		   	});
+			
+			
+			(function($) {
+				$.init({
+					swipeBack:true //启用右滑关闭功能
+				});
+				
+				var network = true;
+				if(mui.os.plus){
+					mui.plusReady(function () {
+						if(plus.networkinfo.getCurrentType()==plus.networkinfo.CONNECTION_NONE){
+							network = false;
+						}
+					});
+				}
+				
+				var cityEl = document.getElementById("city");
+				var respnoseEl = document.getElementById("response");
+				//成功响应的回调函数
+				var success = function(response) {
+					vm.todayTemperature = response.data.wendu;
+					vm.tomorrowHigh = response.data.forecast[1].high;
+					vm.tomorrowLow = response.data.forecast[1].low;
+					vm.tomorrowType = response.data.forecast[1].type;
+					vm.notice = response.data.forecast[1].notice;
+					
+				};
+				//设置全局beforeSend
+				$.ajaxSettings.beforeSend = function(xhr, setting) {
+					//beforeSend演示,也可在$.ajax({beforeSend:function(){}})中设置单个Ajax的beforeSend
+					console.log('beforeSend:::' + JSON.stringify(setting));
+				};
+				//设置全局complete
+				$.ajaxSettings.complete = function(xhr, status) {
+					console.log('complete:::' + status);
+				}
+				var ajax = function() {
+					//利用RunJS的Echo Ajax功能测试
+					var url = 'https://www.sojson.com/open/api/weather/json.shtml?city='+cityEl.value;
+					//发送数据
+					var data = {
+					};
+//					respnoseEl.innerHTML = '正在请求中...';
+					$.getJSON(url, data, success);
+				};
+				//发送请求按钮的点击事件
+				document.getElementById("confirm").addEventListener('tap', function() {
+					if(network){
+						ajax();
+					}else{
+						mui.toast("当前网络不给力，请稍后再试");
+					}
+				});
+				//点击描述中链接时，打开对应网页介绍；
+				$('body').on('tap', 'a', function(e) {
+					var href = this.getAttribute('href');
+					if (href) {
+						if (window.plus) {
+							plus.runtime.openURL(href);
+						} else {
+							location.href = href;
+						}
+					}
+				});
+			})(mui);
+		</script>
+	</body>
+
+</html>
